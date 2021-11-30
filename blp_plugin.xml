@@ -1,0 +1,7 @@
+<library path="lib/libmd_local_planner">
+  <class name="md_local_planner/MDPlannerROS" type="md_local_planner::MDPlannerROS" base_class_type="nav_core::BaseLocalPlanner">
+    <description>
+      A implementation of a local planner using either a MD approach based on configuration parameters.
+    </description>
+  </class>
+</library>
