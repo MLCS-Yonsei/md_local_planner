@@ -161,6 +161,8 @@ namespace md_local_planner {
       double control_gain_1_;
       double control_gain_2_;
       double control_gain_3_;
+      double v_limit_;
+      double omega_limit_;
 
       std::vector<geometry_msgs::PoseStamped> global_plan_;
 

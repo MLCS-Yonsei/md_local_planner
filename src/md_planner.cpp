@@ -81,6 +81,8 @@ namespace md_local_planner {
     control_gain_1_ = config.control_gain1;
     control_gain_2_ = config.control_gain2;
     control_gain_3_ = config.control_gain3;
+    v_limit_ = config.max_vel_x;
+    omega_limit_ = config.max_vel_theta;
     goal_front_costs_.setXShift(forward_point_distance_);
     alignment_costs_.setXShift(forward_point_distance_);
  
@@ -326,16 +328,51 @@ namespace md_local_planner {
     double sp = sin(pos[2]);
     double rdx = cp * dx + sp * dy;
     double rdy = cp * dy - sp * dx;
-    double alpha = atan2(rdy, rdx);
+    double alpha;
+    if (rdy==0) {
+      alpha = 0.0;
+    }
+    else if (rdx==0) {
+      alpha = M_PI_2;
+    }
+    else {
+      alpha = atan2(rdy, rdx);
+    }
     double calpha = cos(alpha);
     double salpha = sin(alpha);
     double phi = psi - alpha;
+    if (phi >= M_PI) {
+      phi -= M_PI * 2.0;
+    }
+    else if (phi < -M_PI) {
+      phi += M_PI * 2.0;
+    }
     double sphi = sin(phi);
+    double v = control_gain_1_ * sqrt(dist_sq) * calpha;
+    double omega = control_gain_1_ * calpha * salpha - control_gain_3_ * alpha;
+    if (abs(alpha) > 0.0001) {
+      omega -= control_gain_2_ * calpha * salpha * phi / alpha;
+    }
+    else {
+      omega -= control_gain_2_ * calpha * phi;
+    }
+    if (v > v_limit_) {
+      v = v_limit_;
+    }
+    else if (v < -v_limit_) {
+      v = -v_limit_;
+    }
+    if (omega > omega_limit_) {
+      omega = omega_limit_;
+    }
+    else if (omega < -omega_limit_) {
+      omega = -omega_limit_;
+    }
 
     result_traj_.cost_ = 0.0;
-    result_traj_.xv_ = control_gain_1_ * sqrt(dist_sq) * calpha;
+    result_traj_.xv_ = v;
     result_traj_.yv_ = 0.0;
-    result_traj_.thetav_ = control_gain_1_ * calpha * salpha - control_gain_2_ * sphi * calpha + control_gain_3_ * salpha;
+    result_traj_.thetav_ = omega;
 
     // debrief stateful scoring functions
     result_traj_.cost_ = obstacle_costs_.scoreTrajectory(result_traj_);
